@@ -7,6 +7,7 @@
  */
 angular.module('ui.select2', []).value('uiSelect2Config', {}).directive('uiSelect2', ['uiSelect2Config', '$timeout', function (uiSelect2Config, $timeout) {
   var options = {};
+  var lastViewValue = [];
   if (uiSelect2Config) {
     angular.extend(options, uiSelect2Config);
   }
@@ -42,15 +43,15 @@ angular.module('ui.select2', []).value('uiSelect2Config', {}).directive('uiSelec
           if (opts.simple_tags) {
             model = [];
             angular.forEach(select2_data, function(value, index) {
-				//modified by yjin to allow customized conversion function in options
-				//Original code here: model.push(value.id);
-				if(opts.convertToAngularFunc && (typeof (opts.convertToAngularFunc) === 'function')) {
-					opts.convertToAngularFunc.call(this, model, value);
-				}
-				else {
-					model.push(value.id);
-				}
-			});
+              //modified by yjin to allow customized conversion function in options
+              //Original code here: model.push(value.id);
+               if(opts.convertToAngularFunc && (typeof (opts.convertToAngularFunc) === 'function')) {
+                     opts.convertToAngularFunc.call(this, model, value);
+               }
+               else {
+                     model.push(value.id);
+               }
+            });
           } else {
             model = select2_data;
           }
@@ -71,14 +72,15 @@ angular.module('ui.select2', []).value('uiSelect2Config', {}).directive('uiSelec
             angular.forEach(
               angular_data,
               function(value, index) {
-                //modified by yjin to allow customized conversion function in options
-				//Original Code here:  model.push({'id': value, 'text': value});
-				if(opts.convertToSelect2Func && (typeof (opts.convertToSelect2Func) === 'function')) {
-					opts.convertToSelect2Func.call(this, model, value);
-				} else {
-					model.push({'id': value, 'text': value});
-				}
-              });
+                 //modified by yjin to allow customized conversion function in options
+                 //Original Code here:  model.push({'id': value, 'text': value});
+                 if(opts.convertToSelect2Func && (typeof (opts.convertToSelect2Func) === 'function')) {
+                     opts.convertToSelect2Func.call(this, model, value);
+                 }
+                 else {
+                     model.push({'id': value, 'text': value});
+                 }
+            });
           } else {
             model = angular_data;
           }
@@ -105,14 +107,29 @@ angular.module('ui.select2', []).value('uiSelect2Config', {}).directive('uiSelec
             controller.$render();
           }, true);
           controller.$render = function () {
+            var viewValue = controller.$viewValue;
             if (isSelect) {
               elm.select2('val', controller.$viewValue);
             } else {
               if (opts.multiple) {
-                var viewValue = controller.$viewValue;
+
                 if (angular.isString(viewValue)) {
                   viewValue = viewValue.split(',');
                 }
+
+                if(opts.selectCallbackMultiTokens) {
+                    if (viewValue.length < lastViewValue.length) {
+                    lastViewValue = angular.copy(viewValue);
+                    return;
+                } else if(lastViewValue.length!=0 && viewValue.length > lastViewValue.length) {
+                      var newViewValue = viewValue.slice(Math.max(viewValue.length - (viewValue.length-lastViewValue.length), 1));
+
+                      elm.select2('data', convertToSelect2Model(newViewValue),'update');
+                      lastViewValue = angular.copy(viewValue);
+                      return;
+                }
+             }
+
                 elm.select2(
                   'data', convertToSelect2Model(viewValue));
               } else {
@@ -125,6 +142,7 @@ angular.module('ui.select2', []).value('uiSelect2Config', {}).directive('uiSelec
                 }
               }
             }
+            lastViewValue = angular.copy(viewValue);
           };
 
           // Watch the options dataset for changes
