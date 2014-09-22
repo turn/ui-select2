@@ -7,7 +7,6 @@
  */
 angular.module('ui.select2', []).value('uiSelect2Config', {}).directive('uiSelect2', ['uiSelect2Config', '$timeout', function (uiSelect2Config, $timeout) {
   var options = {};
-  var lastViewValue = [];
   if (uiSelect2Config) {
     angular.extend(options, uiSelect2Config);
   }
@@ -34,7 +33,7 @@ angular.module('ui.select2', []).value('uiSelect2Config', {}).directive('uiSelec
       return function (scope, elm, attrs, controller) {
         // instance-specific options
         var opts = angular.extend({}, options, scope.$eval(attrs.uiSelect2));
-
+        var lastViewValue = [];
         /*
         Convert from Select2 view-model to Angular view-model.
         */
@@ -42,13 +41,16 @@ angular.module('ui.select2', []).value('uiSelect2Config', {}).directive('uiSelec
           var model;
           if (opts.simple_tags) {
             model = [];
-			angular.forEach(select2_data, function(value, index) {
-				if (opts.convertToAngularFunc && ( typeof (opts.convertToAngularFunc) === 'function')) {
-					opts.convertToAngularFunc.call(this, model, value);
-				} else {
-					model.push(value.id);
-				}
-			}); 
+            angular.forEach(select2_data, function(value, index) {
+              //modified by yjin to allow customized conversion function in options
+              //Original code here: model.push(value.id);
+               if(opts.convertToAngularFunc && (typeof (opts.convertToAngularFunc) === 'function')) {
+                     opts.convertToAngularFunc.call(this, model, value);
+               }
+               else {
+                     model.push(value.id);
+               }
+            });
           } else {
             model = select2_data;
           }
@@ -66,16 +68,18 @@ angular.module('ui.select2', []).value('uiSelect2Config', {}).directive('uiSelec
 
           if (opts.simple_tags) {
             model = [];
-			angular.forEach(angular_data, function(value, index) {
-				if (opts.convertToSelect2Func && ( typeof (opts.convertToSelect2Func) === 'function')) {
-					opts.convertToSelect2Func.call(this, model, value);
-				} else {
-					model.push({
-						'id' : value,
-						'text' : value
-					});
-				}
-			}); 
+            angular.forEach(
+              angular_data,
+              function(value, index) {
+                 //modified by yjin to allow customized conversion function in options
+                 //Original Code here:  model.push({'id': value, 'text': value});
+                 if(opts.convertToSelect2Func && (typeof (opts.convertToSelect2Func) === 'function')) {
+                     opts.convertToSelect2Func.call(this, model, value);
+                 }
+                 else {
+                     model.push({'id': value, 'text': value});
+                 }
+            });
           } else {
             model = angular_data;
           }
